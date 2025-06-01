@@ -56,7 +56,7 @@ khc-cli analyze --help
 ```
 
 ## Documentation
-For more information, please refer to the [Read The Docs](https://app.readthedocs.org/projects/khc-cli/).
+For more information, please refer to the [Read The Docs](https://khc-cli.readthedocs.io/en/latest/).
 
 ## Development
 

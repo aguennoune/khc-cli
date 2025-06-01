@@ -167,4 +167,4 @@ docs/source/auto_examples/
 docs/.doctrees/
 .buildinfo
 _autosummary/
-.readthedocs.yaml
+!.readthedocs.yaml

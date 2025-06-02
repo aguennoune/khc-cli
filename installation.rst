@@ -1,1 +1,7 @@
-Installation\n===========\n\nInstallation instructions coming soon.
+Installation
+============
+
+You may install the package directly from the Python Package Index (PyPI):
+.. code-block:: bash
+
+    pip install khc-cli

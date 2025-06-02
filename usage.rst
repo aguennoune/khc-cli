@@ -1,1 +1,4 @@
-Usage\n=====\n\nUsage instructions coming soon.
+Usage
+=====
+
+Usage instructions coming soon.

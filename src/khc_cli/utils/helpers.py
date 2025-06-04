@@ -11,12 +11,12 @@ from urllib.parse import urlparse
 from pathlib import Path
 from rich.console import Console
 from datetime import datetime
-
+from khc_cli.awesomecure.awesome2py import AwesomeList
 console = Console()
 LOGGER = logging.getLogger(__name__)
 
 def countdown(t):
-    """Visual countdown in console."""
+    """Compte à rebours visuel dans la console."""
     while t:
         mins, secs = divmod(int(t), 60)
         timeformat = "{:02d}:{:02d}".format(mins, secs)
@@ -26,104 +26,238 @@ def countdown(t):
     console.print("\n\n\n\n\n")
 
 def crawl_github_dependents(repo, page_num):
-    """
-    Retrieve the dependents of a GitHub repository.
-    
-    Args:
-        repo (str): Repository name in format 'owner/repo'
-        page_num (int): Number of pages to crawl
-        
-    Returns:
-        list: List of repositories that depend on the given repo
-    """
+    """Récupère les dépendants d'un repo GitHub."""
     url = 'https://github.com/{}/network/dependents'.format(repo)
     dependents_data = []
     list_end = False
     
     for i in range(page_num):
-        r = requests.get(url)
-        soup = BeautifulSoup(r.content, "html.parser")
+        try:
+            r = requests.get(url)
+            soup = BeautifulSoup(r.content, "html.parser")
 
-        page_data = [
-            "{}/{}".format(
-                t.find('a', {"data-repository-hovercards-enabled":""}).text,
-                t.find('a', {"data-hovercard-type":"repository"}).text
-            )
-            for t in soup.findAll("div", {"class": "Box-row"})
-        ]
-        
-        for dependent in page_data:
-            if dependent in dependents_data:
-                list_end = True 
-        
-        if list_end:
-            break
-        else:    
-            dependents_data = dependents_data + page_data
-        
-        try:
-            paginationContainer = soup.find("div", {"class":"paginate-container"}).find_all('a')
-        except:
-            break
-        
-        try:
-            if len(paginationContainer) > 1:
-                paginationContainer = paginationContainer[1]
+            page_data = []
+            for t in soup.findAll("div", {"class": "Box-row"}):
+                repo_owner_elem = t.find('a', {"data-repository-hovercards-enabled":""})
+                repo_name_elem = t.find('a', {"data-hovercard-type":"repository"})
+                
+                # Vérifier que les deux éléments existent avant d'accéder à leur attribut text
+                if repo_owner_elem and repo_name_elem:
+                    dependent = "{}/{}".format(repo_owner_elem.text, repo_name_elem.text)
+                    page_data.append(dependent)
+            
+            for dependent in page_data:
+                if dependent in dependents_data:
+                    list_end = True 
+            
+            if list_end:
+                break
+            else:    
+                dependents_data.extend(page_data)
+            
+            # Traitement de la pagination
+            paginationContainer = None
+            try:
+                pagination_div = soup.find("div", {"class":"paginate-container"})
+                if pagination_div:
+                    paginationContainer = pagination_div.find_all('a')
+            except Exception as e:
+                LOGGER.debug(f"Erreur lors de la récupération de la pagination: {e}")
+                break
+            
+            if not paginationContainer:
+                break
+                
+            try:
+                if len(paginationContainer) > 1:
+                    paginationContainer = paginationContainer[1]
+                else:
+                    paginationContainer = paginationContainer[0]
+            except Exception as e:
+                LOGGER.debug(f"Erreur lors du traitement de la pagination: {e}")
+                break
+            
+            if paginationContainer and "href" in paginationContainer.attrs:
+                url = paginationContainer["href"]
             else:
-                paginationContainer = paginationContainer[0]
-        except:
-            break
-        
-        if paginationContainer:
-            url = paginationContainer["href"]
-        else:
+                break
+                
+        except Exception as e:
+            LOGGER.warning(f"Erreur lors de la récupération des dépendants pour {repo}: {e}")
             break
         
     return dependents_data
 
 def fetch_awesome_readme_content(github_client, awesome_repo_path, readme_filename, local_readme_path):
-    """
-    Fetch the README content of an Awesome list.
-    
-    Args:
-        github_client: GitHub client instance
-        awesome_repo_path (str): Path to the repository (owner/repo)
-        readme_filename (str): Name of the README file
-        local_readme_path (Path): Path where to save the README locally
-        
-    Returns:
-        AwesomeList: Parsed representation of the Awesome list
-    """
-    from khc_cli.awesomecure.awesome2py import AwesomeList
+    """Récupère le contenu du README d'une liste Awesome."""
     
     awesome_repo = github_client.get_repo(awesome_repo_path)
     if not awesome_repo:
         raise ValueError(f"Repository {awesome_repo_path} not found")
-        
-    awesome_content_encoded = awesome_repo.get_contents(
-        urllib.parse.quote(readme_filename)
-    ).content
-    awesome_content = base64.b64decode(awesome_content_encoded)
     
-    # Create parent directory if needed
+    # Déterminer la branche par défaut
+    default_branch = awesome_repo.default_branch
+    LOGGER.info(f"Branche par défaut du dépôt: {default_branch}")
+    
+    # Liste des noms possibles pour le README
+    readme_variants = [
+        readme_filename,
+        readme_filename.lower(),
+        "README",
+        "readme",
+        "README.markdown",
+        "readme.markdown",
+        "README.rst",
+        "readme.rst"
+    ]
+    
+    awesome_content = None
+    last_exception = None
+    
+    # Méthode 1: Essayer d'obtenir le contenu via l'API GitHub avec différentes variantes
+    for variant in readme_variants:
+        try:
+            LOGGER.info(f"Tentative de récupération via l'API GitHub avec le nom: {variant}")
+            content_file = awesome_repo.get_contents(urllib.parse.quote(variant))
+            if isinstance(content_file, list):
+                # Si c'est un dossier, chercher un fichier README dedans
+                for file in content_file:
+                    if re.match(r"readme.*", file.name, re.IGNORECASE):
+                        content_file = file
+                        break
+                else:
+                    continue  # Aucun README trouvé dans la liste
+            
+            awesome_content_encoded = content_file.content
+            awesome_content = base64.b64decode(awesome_content_encoded)
+            LOGGER.info(f"Contenu récupéré avec succès via l'API GitHub pour: {variant}")
+            break
+        except Exception as e:
+            LOGGER.debug(f"Échec avec la variante {variant}: {e}")
+            last_exception = e
+    
+    # Méthode 2: Si l'API GitHub échoue, essayer via l'URL raw
+    if awesome_content is None:
+        LOGGER.warning(f"Impossible d'obtenir le contenu via l'API GitHub: {last_exception}")
+        
+        for variant in readme_variants:
+            try:
+                LOGGER.info(f"Tentative de récupération via l'URL raw avec la branche {default_branch} et le nom: {variant}")
+                raw_url = f"https://raw.githubusercontent.com/{awesome_repo_path}/{default_branch}/{variant}"
+                response = requests.get(raw_url)
+                
+                if response.status_code == 200:
+                    awesome_content = response.content
+                    LOGGER.info(f"Contenu récupéré avec succès via l'URL raw pour: {variant}")
+                    break
+                else:
+                    LOGGER.debug(f"Échec avec l'URL raw pour {variant}: {response.status_code}")
+            except Exception as e:
+                LOGGER.debug(f"Erreur lors de la récupération via l'URL raw pour {variant}: {e}")
+                last_exception = e
+    
+    # Méthode 3: Essayer de récupérer directement la page HTML du dépôt et extraire le README rendu
+    if awesome_content is None:
+        try:
+            LOGGER.info("Tentative de récupération via le HTML de la page GitHub...")
+            html_url = f"https://github.com/{awesome_repo_path}"
+            
+            # Utiliser un User-Agent pour éviter les limitations d'API
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            }
+            response = requests.get(html_url, headers=headers)
+            
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, "html.parser")
+                
+                # Différentes tentatives pour extraire le contenu du README
+                readme_div = soup.find("div", {"id": "readme"})
+                
+                if readme_div:
+                    # Tentative 1: Chercher l'article dans le div readme
+                    readme_content = readme_div.find("article")
+                    
+                    if readme_content:
+                        LOGGER.info("Contenu du README trouvé dans l'article")
+                        # Extraire le contenu Markdown à partir du HTML
+                        markdown_content = []
+                        for elem in readme_content.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "p", "ul", "ol", "li", "a", "code", "pre"]):
+                            if elem.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
+                                level = int(elem.name[1])
+                                markdown_content.append("#" * level + " " + elem.get_text().strip())
+                            elif elem.name == "p":
+                                markdown_content.append(elem.get_text().strip())
+                            elif elem.name == "a":
+                                href = elem.get("href", "")
+                                markdown_content.append(f"[{elem.get_text().strip()}]({href})")
+                            elif elem.name == "li":
+                                markdown_content.append("- " + elem.get_text().strip())
+                        
+                        awesome_content = "\n\n".join(markdown_content).encode('utf-8')
+                    else:
+                        # Tentative 2: Prendre tout le contenu du div readme
+                        LOGGER.info("Article non trouvé, utilisation du div readme complet")
+                        awesome_content = str(readme_div).encode('utf-8')
+                else:
+                    # Tentative 3: Chercher le contenu du markdown principal
+                    LOGGER.warning("Division du README non trouvée, recherche d'alternatives...")
+                    
+                    # Essayer de trouver le contenu Markdown dans un autre élément
+                    markdown_container = soup.find("div", {"class": "markdown-body"})
+                    if markdown_container:
+                        LOGGER.info("Contenu Markdown trouvé dans un conteneur alternatif")
+                        awesome_content = str(markdown_container).encode('utf-8')
+                    else:
+                        # Dernier recours: prendre le contenu du body principal
+                        main_content = soup.find("main", {"id": "js-repo-pjax-container"})
+                        if main_content:
+                            LOGGER.info("Utilisation du contenu principal de la page")
+                            awesome_content = str(main_content).encode('utf-8')
+                        else:
+                            LOGGER.warning("Aucun conteneur de contenu trouvé")
+                
+                if awesome_content:
+                    LOGGER.info("Contenu récupéré avec succès via le HTML de la page GitHub")
+                else:
+                    LOGGER.warning("Échec de l'extraction du contenu à partir du HTML")
+            else:
+                LOGGER.warning(f"Échec de la récupération de la page HTML: {response.status_code}")
+        except Exception as e:
+            LOGGER.error(f"Erreur lors de la récupération via HTML: {e}")
+            last_exception = e
+    
+    # Méthode 4 (cas spécifique): Téléchargement direct pour sindresorhus/awesome
+    if awesome_content is None and awesome_repo_path.lower() == "sindresorhus/awesome":
+        try:
+            LOGGER.info("Tentative spécifique pour sindresorhus/awesome...")
+            # URL direct vers le README de sindresorhus/awesome (peut nécessiter une mise à jour)
+            special_url = "https://raw.githubusercontent.com/sindresorhus/awesome/main/readme.md"
+            response = requests.get(special_url)
+            
+            if response.status_code == 200:
+                awesome_content = response.content
+                LOGGER.info("Contenu récupéré avec succès via l'URL spécifique pour sindresorhus/awesome")
+            else:
+                LOGGER.warning(f"Échec avec l'URL spécifique: {response.status_code}")
+        except Exception as e:
+            LOGGER.error(f"Erreur avec l'URL spécifique: {e}")
+            last_exception = e
+    
+    if awesome_content is None:
+        LOGGER.error("Toutes les méthodes de récupération ont échoué")
+        raise ValueError(f"Impossible de récupérer le contenu du README après avoir essayé plusieurs méthodes: {last_exception}")
+    
+    # Crée le répertoire parent si nécessaire
     Path(local_readme_path).parent.mkdir(parents=True, exist_ok=True)
     
     with open(local_readme_path, "w", encoding="utf-8") as filehandle:
-        filehandle.write(awesome_content.decode("utf-8"))
+        filehandle.write(awesome_content.decode("utf-8", errors="replace"))
     LOGGER.info(f"Awesome README saved to {local_readme_path}")
     return AwesomeList(str(local_readme_path))
 
 def initialize_csv_writers(projects_csv_path, orgs_csv_path):
-    """
-    Initialize CSV writers for projects and organizations.
-    
-    Args:
-        projects_csv_path (Path): Path to the projects CSV file
-        orgs_csv_path (Path): Path to the organizations CSV file
-        
-    Returns:
-        tuple: (writer_projects, writer_github_organizations, existing_orgs, csv_projects_file, csv_orgs_file)
-    """
+    """Initialise les écrivains CSV pour les projets et les organisations."""
     import csv
     from pathlib import Path
     

@@ -1,6 +1,6 @@
 [project]
 name = "khc-cli"
-version = "0.5.1"
+version = "1.1.16"
 description = "CLI tool for analyzing and curating awesome lists focused on sustainable and open source technologies"
 readme = "README.md"
 authors = [
@@ -23,7 +23,7 @@ classifiers = [
 ]
 keywords = ["cli", "awesome-list", "github", "sustainability", "open-source", "technology", "curation", "analysis"]
 dependencies = [
-    "typer[all]>=0.9.0,!=0.16.0",
+    "typer>=0.16.0",
     "rich>=13.6.0",
     "pygithub>=2.1.1",
     "beautifulsoup4>=4.12.2",
@@ -54,8 +54,8 @@ docs = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/Krypto-Hashers-Community/khc-cli"
-"Bug Tracker" = "https://github.com/Krypto-Hashers-Community/khc-cli/issues"
+"Homepage" = "https://github.com/aguennoune/khc-cli"
+"Bug Tracker" = "https://github.com/aguennoune/khc-cli/issues"
 "Documentation" = "https://khc-cli.readthedocs.io/"
 
 [project.scripts]

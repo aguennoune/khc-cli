@@ -1,3 +1,21 @@
+"""
+KHC CLI - analyze command
+Usage:
+  khc-cli analyze repo <repo_name> [--format=<format>] [--github-api-key=<key>]
+  khc-cli analyze etl [--awesome-repo-url=<url>] [--output-dir=<dir>] [--github-api-key=<key>] [--use-template/--no-use-template]
+
+Options:
+  -h --help                 Show this help message
+  -f --format=<format>      Output format (table, json) [default: table]
+  --github-api-key=<key>    GitHub API Key
+  --awesome-repo-url=<url>  URL of the Awesome list to analyze
+  --output-dir=<dir>        Output directory [default: ./csv]
+  --use-template            Use the Awesome List template [default: True]
+
+Description:
+  Analyze GitHub repositories and run an ETL pipeline on Awesome lists.
+"""
+
 """Commands for analyzing GitHub repositories and Awesome lists."""
 
 import typer

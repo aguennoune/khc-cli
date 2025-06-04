@@ -1,3 +1,19 @@
+"""
+KHC CLI - curate command
+Usage:
+  khc-cli curate validate <readme_path>
+  khc-cli curate add_project <repo_url> [--readme-path=<path>] [--section=<section>] [--github-api-key=<key>]
+
+Options:
+  -h --help                  Show this help message
+  --readme-path=<path>       Path to the README.md [default: README.md]
+  --section=<section>        Section where to add the project
+  --github-api-key=<key>     GitHub API Key
+
+Description:
+  Validate and enrich Awesome lists (add projects, format validation).
+"""
+
 """Commands for curating Awesome lists."""
 
 import typer

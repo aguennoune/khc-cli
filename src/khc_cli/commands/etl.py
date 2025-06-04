@@ -1,4 +1,17 @@
-"""ETL pipeline for Awesome lists."""
+"""KHC CLI - ETL pipeline
+Usage:
+  khc-cli analyze etl [--awesome-repo-url=<url>] [--output-dir=<dir>] [--github-api-key=<key>] [--use-template/--no-use-template]
+
+Options:
+  -h --help                 Show this help message
+  --awesome-repo-url=<url>  URL of the Awesome list to process
+  --output-dir=<dir>        Output directory [default: ./csv]
+  --github-api-key=<key>    GitHub API Key
+  --use-template            Use the Awesome List template [default: True]
+
+Description:
+  ETL pipeline to extract, transform, and load data from an Awesome list.
+"""
 
 import logging
 import typer

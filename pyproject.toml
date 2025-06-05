@@ -1,6 +1,6 @@
 [project]
 name = "khc-cli"
-version = "1.17.0"
+version = "1.17.1"
 description = "CLI tool for analyzing and curating awesome lists focused on sustainable and open source technologies"
 readme = "README.md"
 authors = [

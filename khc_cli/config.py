@@ -53,7 +53,7 @@ DEFAULT_CONFIG = {
         },
         "from_source": {
             "steps": [
-                "git clone https://github.com/Krypto-Hashers-Community/khc-cli.git",
+                "git clone https://github.com/aguennoune/khc-cli.git",
                 "cd khc-cli",
                 "pip install -e ."
             ]

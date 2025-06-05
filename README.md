@@ -1,5 +1,3 @@
-## KHC CLI
-
 # KHC CLI
 
 [![PyPI version](https://img.shields.io/pypi/v/khc-cli.svg)](https://pypi.org/project/khc-cli/)
@@ -35,6 +33,12 @@ khc-cli --help
 khc-cli status
 ```
 
+## Initialize the KHC CLI
+
+```bash
+khc-cli config init
+```
+
 ## Templates
 
 The `khc-cli` uses a curated template structure for analyzing and organizing Awesome lists. 
@@ -64,7 +68,7 @@ To contribute to the project:
 
 ```bash
 # Cloner le dépôt
-git clone https://github.com/Krypto-Hashers-Community/khc-cli.git
+git clone https://github.com/aguennoune/khc-cli.git
 cd khc-cli
 
 # Créer un environnement virtuel

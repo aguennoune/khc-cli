@@ -2,6 +2,15 @@ Changelog
 =========
 History of changes for KHC CLI versions.
 
+* **1.17.0** (2025-06-05): Major project restructuring and enhancements
+  - Restructured project to eliminate src/ directory for simpler imports and installation
+  - Added YAML-based user configuration system via ~/.khc_cli_rc
+  - Implemented config init command to generate and manage user configuration
+  - Updated documentation to reflect new structure and configuration options
+  - Optimized entry point script for better error handling and path resolution
+  - Standardized all docstrings and comments in English
+  - Cleaned up code and dependencies for better maintainability
+
 * **0.5.1** (2025-06-01): Initial release
 * **1.1.16** (2025-06-04): Improved error handling for invalid commands and added more detailed helpers options.
 * **0.2.0-alpha.2** (2025-06-04):  

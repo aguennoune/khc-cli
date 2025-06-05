@@ -1,6 +1,6 @@
 [project]
 name = "khc-cli"
-version = "0.2.0-alpha.2"
+version = "1.17.0"
 description = "CLI tool for analyzing and curating awesome lists focused on sustainable and open source technologies"
 readme = "README.md"
 authors = [
@@ -33,6 +33,7 @@ dependencies = [
     "typing-extensions>=4.8.0",
     "markdown>=3.8",
     "twine>=6.1.0",
+    "pyyaml>=6.0.2",
 ]
 
 [project.optional-dependencies]
@@ -69,9 +70,10 @@ build-backend = "hatchling.build"
 source = "vcs"
 
 [tool.hatch.build.targets.wheel]
-include = [
-    "src/khc_cli/resources/*.md",
-]
+packages = ["khc_cli"]
+
+[tool.setuptools]
+packages = ["khc_cli"]
 
 [tool.black]
 line-length = 100
